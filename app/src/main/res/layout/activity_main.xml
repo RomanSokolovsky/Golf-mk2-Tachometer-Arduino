@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#231739"
+    tools:context=".MainActivity">
+
+
+    <ImageView
+        android:id="@+id/tachometer_dial"
+        android:layout_width="match_parent"
+        android:layout_height="433dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="43dp"
+        android:layout_marginTop="16dp"
+        android:src="@drawable/tachometer_dial" />
+
+
+    <TextView
+        android:id="@+id/rpm_textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="367dp"
+        android:layout_marginEnd="28dp"
+        android:background="@drawable/textview_border"
+        android:fontFamily="monospace"
+        android:padding="3dp"
+        android:text="@string/text_view_label"
+        android:textColor="#280101"
+        android:textSize="30sp" />
+
+    <ImageView
+        android:id="@+id/arrow1"
+        android:layout_width="301dp"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@id/tachometer_dial"
+        android:layout_alignEnd="@id/tachometer_dial"
+        android:layout_alignBottom="@id/tachometer_dial"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_centerInParent="true"
+        android:layout_marginStart="100dp"
+        android:layout_marginEnd="-47dp"
+        android:layout_marginBottom="158dp"
+        android:rotation="-65"
+        app:srcCompat="@drawable/arrow1" />
+
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        style="@style/ThickerProgressBar"
+        android:layout_width="260dp"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/tachometer_dial"
+        android:layout_alignTop="@+id/tachometer_dial"
+        android:layout_alignEnd="@+id/tachometer_dial"
+        android:layout_alignBottom="@+id/tachometer_dial"
+        android:layout_marginStart="39dp"
+        android:layout_marginTop="405dp"
+        android:layout_marginEnd="41dp"
+        android:layout_marginBottom="14dp" />
+
+    <TextView
+        android:id="@+id/text600"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/progress_bar"
+        android:layout_alignEnd="@+id/progress_bar"
+        android:layout_alignParentStart="@+id/progress_bar"
+        android:layout_alignParentBottom="@+id/progress_bar"
+        android:layout_marginTop="1dp"
+        android:layout_marginEnd="195dp"
+        android:text="Min: 600"
+        android:textColor="#888585"
+        android:textSize="10sp" />
+
+    <TextView
+        android:id="@+id/text1000"
+        android:layout_width="80dp"
+        android:layout_height="18dp"
+        android:layout_alignStart="@+id/progress_bar"
+        android:layout_alignTop="@+id/progress_bar"
+        android:layout_alignEnd="@+id/progress_bar"
+        android:layout_alignBottom="@+id/progress_bar"
+        android:layout_marginStart="185dp"
+        android:layout_marginTop="-1dp"
+        android:layout_marginEnd="-23dp"
+        android:layout_marginBottom="-3dp"
+        android:text="Max: 1000"
+        android:textColor="#888585"
+        android:textSize="10sp" />
+
+    <TextView
+        android:id="@+id/textViewACC"
+        android:layout_width="40dp"
+        android:layout_height="24dp"
+        android:layout_alignStart="@+id/tachometer_dial"
+        android:layout_alignTop="@+id/tachometer_dial"
+        android:layout_alignEnd="@+id/tachometer_dial"
+        android:layout_alignBottom="@+id/tachometer_dial"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="440dp"
+        android:layout_marginEnd="315dp"
+        android:layout_marginBottom="-31dp"
+        android:fontFamily="monospace"
+        android:text="ACC:"
+        android:textColor="#f44336"
+        android:textSize="17dp" />
+
+    <TextView
+        android:id="@+id/accText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tachometer_dial"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="53dp"
+        android:layout_marginTop="4dp"
+        android:layout_toEndOf="@+id/textViewACC"
+        android:fontFamily="monospace"
+        android:text="0"
+        android:textColor="#956ABE"
+        android:textSize="22dp" />
+
+
+    <TextView
+        android:id="@+id/textV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tachometer_dial"
+        android:layout_marginStart="25dp"
+        android:layout_marginTop="10dp"
+        android:layout_toEndOf="@+id/accText"
+        android:text="(Volts)"
+        android:textColor="#877F7F" />
+    <TextView
+        android:id="@+id/checkBattOk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tachometer_dial"
+        android:layout_marginStart="100dp"
+        android:layout_marginTop="10dp"
+        android:layout_toEndOf="@+id/accText"
+        android:text=" - checking batt"
+        android:textColor="#877F7F" />
+
+    <TextView
+        android:id="@+id/speedTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@id/tachometer_dial"
+        android:layout_alignTop="@id/tachometer_dial"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="70dp"
+        android:layout_marginTop="33dp"
+        android:text="Speed"
+        android:textSize="24sp" />
+
+    <TextView
+        android:id="@+id/maxSpeed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@id/tachometer_dial"
+        android:layout_alignTop="@id/tachometer_dial"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="174dp"
+        android:layout_marginTop="33dp"
+        android:text="Max"
+        android:textColor="#C90808"
+        android:textSize="24sp" />
+
+    <TextView
+        android:id="@+id/textSpeed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="70dp"
+        android:layout_marginTop="8dp"
+        android:text="speed:"
+        android:textColor="#877F7F" />
+
+    <TextView
+        android:id="@+id/textMax"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="174dp"
+        android:layout_marginTop="10dp"
+        android:text="max:"
+        android:textColor="#877F7F" />
+
+    <TextView
+        android:id="@+id/center800"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/progress_bar"
+        android:layout_alignEnd="@+id/progress_bar"
+        android:layout_alignBottom="@+id/progress_bar"
+        android:layout_marginStart="116dp"
+        android:layout_marginEnd="116dp"
+        android:layout_marginBottom="-2dp"
+        android:text="|"
+        android:textColor="#7D0D0D"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/center900"
+        android:layout_width="5dp"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/center800"
+        android:layout_alignEnd="@+id/progress_bar"
+        android:layout_alignBottom="@+id/progress_bar"
+        android:layout_marginStart="58dp"
+        android:layout_marginEnd="58dp"
+        android:layout_marginBottom="-2dp"
+        android:text="|"
+        android:textColor="#C90808"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/under900"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/checkBattOk"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="93dp"
+        android:layout_marginBottom="-1dp"
+        android:text="900"
+        android:textColor="#B48282"
+        android:textSize="10sp" />
+    <TextView
+        android:id="@+id/under800"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/checkBattOk"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="151dp"
+        android:layout_marginBottom="-1dp"
+        android:textColor="#6C4D4D"
+        android:text="800"
+        android:textSize="10sp" />
+
+    <TextView
+        android:id="@+id/textViewDifferRpm"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/tachometer_dial"
+        android:layout_alignBottom="@+id/progress_bar"
+        android:layout_marginStart="39dp"
+        android:layout_marginBottom="19dp"
+        android:textColor="#302B2B"
+        android:textSize="20sp"
+        android:text="Різниця" />
+
+
+</RelativeLayout>
