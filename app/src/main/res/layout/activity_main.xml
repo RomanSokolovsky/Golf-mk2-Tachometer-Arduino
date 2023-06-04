@@ -23,12 +23,12 @@
 
     <TextView
         android:id="@+id/rpm_textview"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="100dp"
+        android:layout_height="43dp"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginTop="367dp"
-        android:layout_marginEnd="28dp"
+        android:layout_marginTop="303dp"
+        android:layout_marginEnd="40dp"
         android:background="@drawable/textview_border"
         android:fontFamily="monospace"
         android:padding="3dp"
@@ -263,6 +263,31 @@
         android:textColor="#302B2B"
         android:textSize="20sp"
         android:text="Різниця" />
+
+    <TextView
+        android:id="@+id/textViewPositiveDifferences"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/tachometer_dial"
+        android:layout_alignBottom="@+id/progress_bar"
+        android:layout_marginStart="172dp"
+        android:layout_marginBottom="247dp"
+        android:text="0"
+        android:textColor="#302B2B"
+        android:textStyle="bold"
+        android:textSize="24sp" />
+
+    <TextView
+        android:id="@+id/textPDiff"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/tachometer_dial"
+        android:layout_alignBottom="@+id/progress_bar"
+        android:layout_marginStart="172dp"
+        android:layout_marginBottom="228dp"
+        android:text="Стиль їзди"
+        android:textColor="#323F88"
+        android:textSize="13sp" />
 
 
 </RelativeLayout>

@@ -4,6 +4,7 @@ import android.animation.ObjectAnimator
 import android.app.Activity
 import android.app.AlertDialog
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -28,6 +29,7 @@ import java.util.Timer
 import java.util.TimerTask
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
+import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
     private lateinit var bluetoothAdapter: BluetoothAdapter
@@ -38,11 +40,18 @@ class MainActivity : AppCompatActivity() {
     private lateinit var speedTextView: TextView
     private lateinit var maxSpeedView: TextView
     private lateinit var checkBatt: TextView
+    private lateinit var textViewPositiveDifferences: TextView
+
     private var flagBatt = 0
     private lateinit var speedometerUtils: SpeedometerUtils
     private lateinit var arrowImageView: ImageView
     private lateinit var progressBar: ProgressBar
-    private lateinit var  mediaPlayer: MediaPlayer
+    private lateinit var  mediaPlayerOver: MediaPlayer
+    private lateinit var  mediaPlayerBatteryNo: MediaPlayer
+    private lateinit var  mediaPlayerBatteryOk: MediaPlayer
+    private lateinit var  mediaPlayerConnect: MediaPlayer
+    private lateinit var  mediaPlayerDisConnect: MediaPlayer
+
     private var connectionLostDialog: AlertDialog? = null
     private var isConnected: Boolean = false
     private val voltsList = mutableListOf<Double>()
@@ -51,6 +60,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var timer: Timer
     private var count = 0
     private var connected = false
+    private lateinit var device: BluetoothDevice
+    private lateinit var socket: BluetoothSocket
+
 
     companion object {
         private const val REQUEST_ENABLE_BT = 1
@@ -62,12 +74,18 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         timer = Timer()
+        mediaPlayerOver = MediaPlayer.create(this, R.raw.over)
+        mediaPlayerBatteryNo = MediaPlayer.create(this, R.raw.no)
+        mediaPlayerBatteryOk = MediaPlayer.create(this, R.raw.ok)
+        mediaPlayerConnect = MediaPlayer.create(this, R.raw.connect)
+        mediaPlayerDisConnect = MediaPlayer.create(this, R.raw.disconnect)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.activity_main)
         rpmTextView = findViewById(R.id.rpm_textview)
         checkBatt = findViewById(R.id.checkBattOk)
         voltsTextView = findViewById(R.id.accText)
         textViewDifferRpm = findViewById(R.id.textViewDifferRpm)
+        textViewPositiveDifferences = findViewById(R.id.textViewPositiveDifferences)
         arrowImageView = findViewById(R.id.arrow1)
         speedTextView = findViewById(R.id.speedTextView)
         maxSpeedView = findViewById(R.id.maxSpeed)
@@ -76,31 +94,42 @@ class MainActivity : AppCompatActivity() {
 
         Log.d("mytest", "Initialize Bluetooth adapter")
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        device = bluetoothAdapter.getRemoteDevice(DEVICE_MAC_ADDRESS)
         enableBluetooth()
         progressBar = findViewById(R.id.progress_bar)
-        mediaPlayer = MediaPlayer.create(this, R.raw.over)
 
         //init speedometr
         speedometerUtils = SpeedometerUtils()
         speedometerUtils.initializeSpeedometer(this, speedTextView, maxSpeedView)
         timerScheduleTasks()
 
+        // Start the reconnection loop
+        Thread {
+            while (true) {
+                connectToDevice()
+                // Attempt reconnection after a short delay
+                Thread.sleep(1000)
+            }
+        }.start()
+
     }
 
     private fun timerScheduleTasks() {
+        val averageStyle = mutableListOf<Float>() // List to store average values of style
         //alculate Average Difference once in a second
         timer.schedule(object : TimerTask() {
             override fun run() {
                 if (rpmList.size >= 2) {
                     val tempcalc = calculateAverageDifference(rpmList)
+                    averageStyle.add(tempcalc)
                     runOnUiThread {
-                        Log.d("mytest", "calculateAverageDifference(rpmList) = : $tempcalc")
                         maxMinRPM()
                         rpmTextView.text = averageRpm.toString()
                     }
                 }
             }
-        }, 0, 1000)
+        }, 0, 500)
+
 
         // find an Averege value of Accumulator
         timer.schedule(object : TimerTask() {
@@ -118,6 +147,20 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }, 0, 2000)
+
+        // Calculate the average value of averageStyle once every 10 seconds
+        timer.schedule(object : TimerTask() {
+            override fun run() {
+                if (averageStyle.isNotEmpty()) {
+                    val averageValue = averageStyle.average() // Calculate the average of averageStyle list
+//                    Log.d("mytest", "Average value of AverageStyle: $averageValue")
+                    runOnUiThread(){
+                        textViewPositiveDifferences.text = String.format("%.1f", averageValue)
+                    }
+                    averageStyle.clear()
+                }
+            }
+        }, 0, 10000)
     }
 
 
@@ -125,27 +168,19 @@ class MainActivity : AppCompatActivity() {
         if (volt < 12.00) {
             checkBatt.text = "Глибокий Розряд!"
             checkBatt.setTextColor(Color.RED)
-            mediaPlayer.stop() // Stop any ongoing playback
-            mediaPlayer = MediaPlayer.create(this, R.raw.no)
-            mediaPlayer.start() // Start playing "no.mp3"
+            mediaPlayerBatteryNo.start()
         } else if (volt >= 12.00 && volt <= 12.20) {
             checkBatt.text = "Розряд"
             checkBatt.setTextColor(Color.YELLOW)
-            mediaPlayer.stop() // Stop any ongoing playback
-            mediaPlayer = MediaPlayer.create(this, R.raw.no)
-            mediaPlayer.start() // Start playing "no.mp3"
+            mediaPlayerBatteryNo.start()
         } else if (volt >= 12.20 && volt <= 12.50) {
             checkBatt.text = "Нормальний Заряд"
             checkBatt.setTextColor(Color.GREEN)
-            mediaPlayer.stop() // Stop any ongoing playback
-            mediaPlayer = MediaPlayer.create(this, R.raw.ok)
-            mediaPlayer.start() // Start playing "ok.mp3"
+            mediaPlayerBatteryOk.start()
         } else if (volt >= 12.50) {
             checkBatt.text = "Повний Заряд"
             checkBatt.setTextColor(Color.GREEN)
-            mediaPlayer.stop() // Stop any ongoing playback
-            mediaPlayer = MediaPlayer.create(this, R.raw.ok)
-            mediaPlayer.start() // Start playing "ok.mp3"
+            mediaPlayerBatteryOk.start()
         }
     }
 
@@ -209,72 +244,55 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun connectToDevice() {
-        Log.d("mytest", "connectToDevice() : ok")
-        val device = bluetoothAdapter.getRemoteDevice(DEVICE_MAC_ADDRESS)
-        // Create a BluetoothSocket for the device
-        val socket: BluetoothSocket? = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
-        // Connect to the device in a separate thread
-        val latch = CountDownLatch(1)
-        Thread {
-            while (!connected) {
-                try {
-                    // This is a blocking call and will only return after a successful connection or an exception
-                    socket?.connect()
-                    // Connection successful, perform your desired operations with the device
-                    Log.d("mytest", "Connected to device: ${device.name} (${device.address})")
-                    connected = true
-                    isConnected = true
-                    runOnUiThread {
-                        dismissConnectionLostDialog()
-                    }
-                    // Continuously read incoming bytes and convert them to integers
-                    Thread {
-                        readIncomeByte(socket)
-                        latch.countDown() // Signal that the reading is completed
-                    }.start()
-                    // Wait for the reading to complete
-                    try {
-                        latch.await()
-                    } catch (e: InterruptedException) {
-                        // Handle InterruptedException if needed
-                    }
-
-                } catch (e: IOException) {
-                    Log.e("mytest", "Error connecting to device: ${e.message}")
-                    connected = false
-                    runOnUiThread {
-                        showConnectionLostDialog()
-                    }
-                    // Attempt reconnection after a short delay
-                    Thread.sleep(2000)
-                }
-
+        try {
+            if (!::socket.isInitialized) {
+                socket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
             }
-            // Close the socket if the loop exits
-            socket?.close()
-        }.start()
+            if (!connected) {
+                socket?.connect()
+                connected = true
+                isConnected = true
+                Log.d("mytest", "connected : $connected ")
+                mediaPlayerConnect.start()
+                runOnUiThread {
+                    dismissConnectionLostDialog()
+                }
+                // Continuously read incoming bytes and convert them to integers
+                Thread {
+                    readIncomeByte(socket)
+                }.start()
+            }
+        } catch (e: IOException) {
+            Log.e("mytest", "DISCONNECTED from device: ${e.message}")
+            connected = false
 
+            runOnUiThread {
+                showConnectionLostDialog()
+            }
+        }
     }
+
 
     private fun readIncomeByte(socket: BluetoothSocket?) {
         val inputStream: InputStream? = socket?.inputStream
         val bufferedReader = BufferedReader(InputStreamReader(inputStream))
-        while (connected) {
-            try {
-                val receivedString = bufferedReader.readLine()
-                if (receivedString != null) {
-                    runOnUiThread {
-                        if (receivedString.startsWith("tbw=")) {
-                            taho(receivedString)
-                        } else if (receivedString.startsWith("rvlt=")){
-                            readVolts(receivedString)
-                        }
-                    }
+        try {
+            while (connected) {
+                val line = bufferedReader.readLine()
+                if (line == null || line == "-1") {
+                    break // Exit the loop if the line is null or "-1"
                 }
-            } catch (e: IOException) {
-                Log.e("mytest", "Error reading data: ${e.message}")
-                connected = false
+                // Process the received data
+                if (line.startsWith("tb")) {
+                    runOnUiThread { taho(line) }
+                } else if (line.startsWith("rv")) {
+                    runOnUiThread { readVolts(line) }
+                }
             }
+        } catch (e: IOException) {
+            Log.e("mytest", "Error reading data: ${e.message}")
+            connected = false
+            mediaPlayerDisConnect.start()
         }
     }
 
@@ -304,51 +322,47 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun updateArrowRotation(rpm: Float) {
-        // Calculate the rotation angle based on the received RPM
+    fun updateArrowRotation(rpmAvr: Int) {
         val maxRpm = 6000f // Define the maximum RPM value
         val maxRotation = 170f // Define the maximum rotation angle in degrees
-        val rotation = (rpm / maxRpm) * maxRotation
-        // Create an ObjectAnimator to animate the rotation property of the arrowImageView
-        val animator = ObjectAnimator.ofFloat(arrowImageView, "rotation", arrowImageView.rotation, rotation - 65)
-        animator.duration = 200 // Set the duration of the animation (in milliseconds)
-        animator.interpolator = LinearInterpolator() // Set the desired interpolator for the animation
-        animator.start() // Start the animation
+        val rotation = (rpmAvr.toFloat() / maxRpm) * maxRotation - 65
+        arrowImageView.rotation = rotation
     }
 
     fun taho(receivedString: String) {
-        val receivedTimeBetween = receivedString.substring(4).toIntOrNull()
+        val receivedTimeBetween = receivedString.substring(2).toIntOrNull()
         var receivedRpm: Float? = null
         if (receivedTimeBetween != null && receivedTimeBetween > 4000) {
             receivedRpm = 60000000.0f / (receivedTimeBetween * 2).toFloat()
             //every one second update average value - rpmTextView
             addRpmValue(receivedRpm)
-            averageRpm = if (rpmList.isNotEmpty() && rpmList.size >= 50) {
-                rpmList.average().toInt()
-            } else {
-                0
+            averageRpm = synchronized(rpmList) {
+                if (rpmList.isNotEmpty() && rpmList.size >= 10) {
+                    rpmList.average().toInt()
+                } else {
+                    0
+                }
             }
 
             }
-//        rpmTextView.text = if (receivedRpm != null) receivedRpm.toInt().toString()  else ""
-        if (receivedRpm != null) {
-            updateArrowRotation(receivedRpm)
-            val minRpm = 600f
-            val maxRpm = 1000f
-            val progressBarMin = 0
-            val progressBarMax = progressBar.max
-            val transitionDuration = 600L
-            val progress = (((receivedRpm - minRpm) / (maxRpm - minRpm)) * (progressBarMax - progressBarMin)).toInt() + progressBarMin
-            val animator = ObjectAnimator.ofInt(progressBar, "progress", progress)
-            animator.interpolator = LinearInterpolator()
-            animator.duration = transitionDuration
-            animator.start()
-        }
-        if (receivedRpm != null && receivedRpm > 4500 && !mediaPlayer.isPlaying) {
-            mediaPlayer.start() // Start playing the MP3 file
-        } else if (receivedRpm == null || receivedRpm <= 4500 && mediaPlayer.isPlaying) {
-            mediaPlayer.pause() // Pause or stop the MP3 file
-            mediaPlayer.seekTo(0) // Reset the playback position
+
+
+        runOnUiThread() {
+            if (averageRpm != null) {
+                updateArrowRotation(averageRpm)
+                val minRpm = 600f
+                val maxRpm = 1000f
+                val progressBarMin = 0
+                val progressBarMax = progressBar.max
+                val progress = (((averageRpm - minRpm) / (maxRpm - minRpm)) * (progressBarMax - progressBarMin)).toInt() + progressBarMin
+                progressBar.progress = progress
+            }
+            if (averageRpm != null && averageRpm > 5000 && !mediaPlayerOver.isPlaying) {
+                mediaPlayerOver.start() // Start playing "no.mp3"
+            } else if (averageRpm == null || averageRpm <= 5000 && mediaPlayerOver.isPlaying) {
+                mediaPlayerOver.pause() // Pause or stop the MP3 file
+                mediaPlayerOver.seekTo(0) // Reset the playback position
+            }
         }
 
 
@@ -357,34 +371,46 @@ class MainActivity : AppCompatActivity() {
         if (rpm != null) {
             rpmList.add(rpm)
             // Ensure the list contains a maximum of 20 samples
-            if (rpmList.size > 50) {
+            if (rpmList.size > 10) {
                 rpmList.removeAt(0) // Remove the oldest sample
             }
         }
     }
 
-    fun maxMinRPM(){
-        // Calculate and update the maximum and minimum RPM values
-        var differenceRpm = 0f
-        val maxRpm = rpmList.maxOrNull() ?: 0f
-        val minRpm = rpmList.minOrNull() ?: 0f
-        differenceRpm = if (maxRpm != 0f)  maxRpm - minRpm else 0f
+    fun maxMinRPM() {
+        val measurements = rpmList?.toList() ?: return // Return early if rpmList is null
+        val filteredMeasurements = measurements.filterNotNull() // Filter out null values
+        val maxRpm = filteredMeasurements.maxOrNull() ?: 0f
+        val minRpm = filteredMeasurements.minOrNull() ?: 0f
+        val differenceRpm = if (maxRpm != 0f) maxRpm - minRpm else 0f
         textViewDifferRpm.text = String.format("%.0f", differenceRpm)
     }
 
     fun calculateAverageDifference(measurements: List<Float>): Float {
         var totalDifference = 0f
-        for (i in 0 until measurements.size - 1) {
-            val difference = measurements[i + 1] - measurements[i]
-            totalDifference += difference
+        var count = 0 // Counter for positive differences
+        for (i in 0 until measurements.size) {
+            if(i + 1 != measurements.size) {
+                val difference = measurements[i + 1] - measurements[i]
+                if (difference > 0) {
+                    totalDifference += difference
+                    count++
+                }
+            } else {
+                break
+            }
+
         }
-        val averageDifference = totalDifference / (measurements.size - 1)
+
+        val averageDifference = if (count > 0) totalDifference / count else 0f
         return averageDifference
     }
 
     fun readVolts(receivedString: String) {
-        val receivedVolts = receivedString.substring(5).toIntOrNull()
+        val receivedVolts = receivedString.substring(2).toIntOrNull()
+        Log.d("mytest", "receivedVolts :  $receivedVolts")
         val formattedVolts = receivedVolts?.div(100.0)
+        Log.d("mytest", "formattedVolts :  $formattedVolts")
         if (formattedVolts != null) {
             voltsList.add(formattedVolts)
         }
@@ -394,7 +420,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        mediaPlayer.release() // Release the MediaPlayer resources
+        mediaPlayerOver.release()
+        mediaPlayerBatteryNo.release()
+        mediaPlayerBatteryOk.release()
         bluetoothAdapter.disable()
         speedometerUtils.stopLocationUpdates(this)
         timer.cancel()
